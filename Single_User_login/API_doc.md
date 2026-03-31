@@ -136,33 +136,115 @@ Content-Type: application/json
 
 ---
 
-## Using the JWT
+## POST /auth/refresh
 
-Include the token from any auth response as a Bearer header on protected endpoints:
+Rotates both cookies silently. Called automatically by the frontend when an access token expires. No request body needed — the `refreshToken` cookie is read by the backend.
 
+**200 OK**
+```json
+{ "success": true, "message": "Token refreshed", "data": null }
 ```
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+**401 Unauthorized** — refresh token expired or invalid → user must log in again.
+
+---
+
+## POST /auth/logout
+
+Clears both `accessToken` and `refreshToken` cookies on the server.
+
+**200 OK**
+```json
+{ "success": true, "message": "Logged out successfully", "data": null }
 ```
 
-The token expires after **24 hours** (configurable via `jwt.expiration` in `application.yaml`).
+---
+
+## GET /user/profile  *(protected)*
+
+Returns the currently authenticated user's profile.
+
+**200 OK**
+```json
+{
+  "success": true,
+  "message": "Profile fetched",
+  "data": {
+    "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "email": "karthikeyan@example.com",
+    "fullName": "karthikeyan",
+    "gender": "Male",
+    "isActive": true
+  }
+}
+```
+
+---
+
+## PATCH /user/profile  *(protected)*
+
+Updates the authenticated user's full name and/or gender.
+
+### Request Body
+```json
+{
+  "fullName": "Karthikeyan S",
+  "gender": "Male"
+}
+```
+
+| Field      | Type   | Required | Notes                        |
+|------------|--------|----------|------------------------------|
+| `fullName` | string | yes      | max 255 chars                |
+| `gender`   | string | no       | max 20 chars; `""` clears it |
+
+**200 OK**
+```json
+{
+  "success": true,
+  "message": "Profile updated successfully",
+  "data": {
+    "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "email": "karthikeyan@example.com",
+    "fullName": "Karthikeyan S",
+    "gender": "Male",
+    "isActive": true
+  }
+}
+```
+
+---
+
+## Token & Cookie Strategy
+
+| Cookie         | HttpOnly | Expiry   | Purpose                        |
+|----------------|----------|----------|--------------------------------|
+| `accessToken`  | ✅        | 15 min   | Authenticates every API call   |
+| `refreshToken` | ✅        | 7 days   | Issues new access token silently|
+
+- Tokens are **never** present in response bodies.
+- The browser sends both cookies automatically (no JS access).
+- On 401, the frontend Axios interceptor calls `/auth/refresh` and retries transparently.
+- For **Postman** testing, enable **"Send cookies"** and use **Cookie Manager** to inspect them.  
+  Alternatively, send `Authorization: Bearer <token>` header — the filter accepts both.
 
 ---
 
 ## Postman Quick-Start
 
-1. **Register**
-   - Method: `POST`
-   - URL: `http://localhost:8080/api/auth/register`
-   - Body → raw → JSON → paste register body above
+1. **Enable cookie support** — in Postman Settings → General → turn on "Automatically follow redirects" and use the Cookie Manager.
 
-2. **Login**
-   - Method: `POST`
-   - URL: `http://localhost:8080/api/auth/login`
-   - Body → raw → JSON → paste login body above
-   - Copy the `data.token` from the response
+2. **Register** — `POST http://localhost:8080/api/auth/register`
 
-3. **Authenticated request** (any protected endpoint)
-   - Add header: `Authorization: Bearer <token>`
+3. **Login** — `POST http://localhost:8080/api/auth/login`  
+   After login, Postman stores `accessToken` and `refreshToken` cookies automatically.
+
+4. **Get profile** — `GET http://localhost:8080/api/user/profile` (no extra headers needed)
+
+5. **Edit profile** — `PATCH http://localhost:8080/api/user/profile`
+
+6. **Refresh** — `POST http://localhost:8080/api/auth/refresh` (uses `refreshToken` cookie)
+
+7. **Logout** — `POST http://localhost:8080/api/auth/logout`
 
 ---
 

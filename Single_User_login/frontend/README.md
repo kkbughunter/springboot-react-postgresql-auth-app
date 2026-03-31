@@ -1,4 +1,4 @@
-## Frontend Project Structure
+## Frontend Project Structure Example
 ```
 src/
 ├── main.jsx

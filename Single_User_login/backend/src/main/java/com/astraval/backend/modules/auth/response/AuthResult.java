@@ -6,14 +6,18 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Public response body sent to the client after login / register.
- * Tokens are NOT included — they travel in httpOnly cookies.
+ * Internal DTO returned by AuthService — carries both tokens (for cookie
+ * setting in the controller) plus the user info that goes into the response body.
+ * Never serialised directly to the client.
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AuthResponse {
+public class AuthResult {
+
+    private String accessToken;
+    private String refreshToken;
 
     private String userId;
     private String email;

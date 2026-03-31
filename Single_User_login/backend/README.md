@@ -1,5 +1,5 @@
 
-## Backend Folder Structure.
+## Backend Folder Structure Example.
 ```
 src/
 └── main/

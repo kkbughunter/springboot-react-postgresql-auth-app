@@ -23,4 +23,5 @@ server:
 jwt:
   # 32-byte base64 secret — change this in production
   secret: dGhpcyBpcyBhIHNlY3JldCBrZXkgZm9yIGp3dCBhdXRoZW50aWNhdGlvbg==
-  expiration: 86400000   # 24 hours in milliseconds
+  access-expiration: 900000       # 15 minutes in milliseconds
+  refresh-expiration: 604800000   # 7 days in milliseconds

@@ -6,7 +6,8 @@ import com.astraval.backend.common.util.JwtUtil;
 import com.astraval.backend.modules.auth.mapper.AuthMapper;
 import com.astraval.backend.modules.auth.request.LoginRequest;
 import com.astraval.backend.modules.auth.request.RegisterRequest;
-import com.astraval.backend.modules.auth.response.AuthResponse;
+import com.astraval.backend.modules.auth.response.AuthResult;
+import com.astraval.backend.modules.auth.response.AuthTokenPair;
 import com.astraval.backend.modules.user.entity.User;
 import com.astraval.backend.modules.user.entity.UserDetail;
 import com.astraval.backend.modules.user.repo.UserDetailRepository;
@@ -28,7 +29,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public AuthResponse register(RegisterRequest request) {
+    public AuthResult register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new UserAlreadyExistsException("Email is already registered");
         }
@@ -49,12 +50,13 @@ public class AuthServiceImpl implements AuthService {
         userDetail.setModifiedBy("SYSTEM");
         userDetailRepository.save(userDetail);
 
-        String token = jwtUtil.generateToken(savedUser.getEmail(), savedUser.getUserId().toString());
-        return authMapper.toAuthResponse(savedUser, request.getFullName(), token);
+        String accessToken  = jwtUtil.generateAccessToken(savedUser.getEmail(), savedUser.getUserId().toString());
+        String refreshToken = jwtUtil.generateRefreshToken(savedUser.getEmail());
+        return authMapper.toAuthResult(savedUser, request.getFullName(), null, accessToken, refreshToken);
     }
 
     @Override
-    public AuthResponse login(LoginRequest request) {
+    public AuthResult login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new InvalidCredentialsException("Invalid email or password"));
 
@@ -66,11 +68,34 @@ public class AuthServiceImpl implements AuthService {
             throw new InvalidCredentialsException("Invalid email or password");
         }
 
-        String fullName = userDetailRepository.findByUserId(user.getUserId())
-                .map(UserDetail::getFullName)
-                .orElse(null);
+        UserDetail detail = userDetailRepository.findByUserId(user.getUserId()).orElse(null);
+        String fullName = detail != null ? detail.getFullName() : null;
+        String gender   = detail != null ? detail.getGender()   : null;
 
-        String token = jwtUtil.generateToken(user.getEmail(), user.getUserId().toString());
-        return authMapper.toAuthResponse(user, fullName, token);
+        String accessToken  = jwtUtil.generateAccessToken(user.getEmail(), user.getUserId().toString());
+        String refreshToken = jwtUtil.generateRefreshToken(user.getEmail());
+        return authMapper.toAuthResult(user, fullName, gender, accessToken, refreshToken);
+    }
+
+    @Override
+    public AuthTokenPair refreshTokens(String refreshToken) {
+        if (!jwtUtil.isTokenValid(refreshToken) || !jwtUtil.isRefreshToken(refreshToken)) {
+            throw new InvalidCredentialsException("Invalid or expired refresh token");
+        }
+
+        String email = jwtUtil.extractEmail(refreshToken);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new InvalidCredentialsException("User not found"));
+
+        if (!user.getIsActive()) {
+            throw new InvalidCredentialsException("Account is deactivated");
+        }
+
+        String newAccessToken  = jwtUtil.generateAccessToken(email, user.getUserId().toString());
+        String newRefreshToken = jwtUtil.generateRefreshToken(email); // rotation
+        return AuthTokenPair.builder()
+                .accessToken(newAccessToken)
+                .refreshToken(newRefreshToken)
+                .build();
     }
 }

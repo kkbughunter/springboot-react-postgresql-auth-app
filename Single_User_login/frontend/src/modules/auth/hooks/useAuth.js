@@ -1,20 +1,20 @@
 import { useState } from 'react'
-import { loginApi, registerApi } from '../services/auth.api'
+import { loginApi, logoutApi, registerApi } from '../services/auth.api'
 import useAuthStore from '../store/auth.store'
 
 export function useAuth() {
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const setAuth = useAuthStore((state) => state.setAuth)
-  const logout = useAuthStore((state) => state.logout)
+  const [error, setError]     = useState(null)
+  const setUser  = useAuthStore((state) => state.setUser)
+  const logout   = useAuthStore((state) => state.logout)
 
   const login = async (credentials) => {
     setLoading(true)
     setError(null)
     try {
       const res = await loginApi(credentials)
-      const { token, email, fullName } = res.data.data
-      setAuth(token, { email, fullName })
+      const { userId, email, fullName, gender } = res.data.data
+      setUser({ userId, email, fullName, gender })
       return true
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed')
@@ -29,8 +29,8 @@ export function useAuth() {
     setError(null)
     try {
       const res = await registerApi(userData)
-      const { token, email, fullName } = res.data.data
-      setAuth(token, { email, fullName })
+      const { userId, email, fullName, gender } = res.data.data
+      setUser({ userId, email, fullName, gender })
       return true
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed')
@@ -40,5 +40,15 @@ export function useAuth() {
     }
   }
 
-  return { login, register, logout, loading, error }
+  const logoutUser = async () => {
+    try {
+      await logoutApi()   // backend clears httpOnly cookies
+    } catch (_) {
+      // ignore network errors — still clear local state
+    } finally {
+      logout()
+    }
+  }
+
+  return { login, register, logoutUser, loading, error }
 }

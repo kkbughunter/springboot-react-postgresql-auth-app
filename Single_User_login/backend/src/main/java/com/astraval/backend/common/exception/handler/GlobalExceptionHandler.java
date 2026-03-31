@@ -2,6 +2,7 @@ package com.astraval.backend.common.exception.handler;
 
 import com.astraval.backend.common.exception.InvalidCredentialsException;
 import com.astraval.backend.common.exception.UserAlreadyExistsException;
+import com.astraval.backend.common.exception.UserNotFoundException;
 import com.astraval.backend.common.util.ApiResponse;
 import com.astraval.backend.common.util.ApiResponseFactory;
 import org.springframework.http.HttpStatus;
@@ -25,6 +26,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<ApiResponse<Void>> handleInvalidCredentials(InvalidCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponseFactory.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUserNotFound(UserNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ApiResponseFactory.error(ex.getMessage()));
     }
 

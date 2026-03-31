@@ -1,16 +1,23 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 
-const useAuthStore = create(
-  persist(
-    (set) => ({
-      token: null,
-      user: null,
-      setAuth: (token, user) => set({ token, user }),
-      logout: () => set({ token: null, user: null }),
-    }),
-    { name: 'auth' }
-  )
-)
+/**
+ * Pure in-memory store — nothing is written to localStorage or sessionStorage.
+ * Auth state is derived exclusively from the httpOnly cookies managed by the backend.
+ * On every page load, providers.jsx calls GET /user/profile to rehydrate this store.
+ */
+const useAuthStore = create((set) => ({
+  user: null,             // { userId, email, fullName, gender }
+  isAuthenticated: false,
+  isLoading: true,        // true while the initial /user/profile check is in flight
+
+  setUser: (user) => set({ user, isAuthenticated: true, isLoading: false }),
+
+  updateUser: (updates) =>
+    set((state) => ({ user: { ...state.user, ...updates } })),
+
+  logout: () => set({ user: null, isAuthenticated: false, isLoading: false }),
+
+  setLoading: (isLoading) => set({ isLoading }),
+}))
 
 export default useAuthStore

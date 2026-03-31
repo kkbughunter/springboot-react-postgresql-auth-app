@@ -2,9 +2,11 @@ import { Outlet, Navigate } from 'react-router-dom'
 import useAuthStore from '../modules/auth/store/auth.store'
 
 export default function AuthLayout() {
-  const token = useAuthStore((state) => state.token)
+  const { isAuthenticated, isLoading } = useAuthStore()
 
-  if (token) return <Navigate to="/dashboard" replace />
+  if (isLoading) return <div className="page-loading">Checking session…</div>
+
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />
 
   return (
     <div className="auth-layout">

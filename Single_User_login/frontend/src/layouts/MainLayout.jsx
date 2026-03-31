@@ -1,13 +1,21 @@
 import { Outlet, Navigate, useNavigate } from 'react-router-dom'
+import { logoutApi } from '../modules/auth/services/auth.api'
 import useAuthStore from '../modules/auth/store/auth.store'
 
 export default function MainLayout() {
-  const { token, user, logout } = useAuthStore()
+  const { isAuthenticated, isLoading, user, logout } = useAuthStore()
   const navigate = useNavigate()
 
-  if (!token) return <Navigate to="/login" replace />
+  if (isLoading) return <div className="page-loading">Checking session…</div>
 
-  const handleLogout = () => {
+  if (!isAuthenticated) return <Navigate to="/login" replace />
+
+  const handleLogout = async () => {
+    try {
+      await logoutApi()   // backend clears both httpOnly cookies
+    } catch (_) {
+      // still clear local state even if the network request fails
+    }
     logout()
     navigate('/login')
   }
