@@ -1,28 +1,72 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import useAuthStore from '../store/auth.store'
 
 export default function Register() {
-  const [form, setForm] = useState({ fullName: '', email: '', password: '' })
+  const [form, setForm] = useState({
+    orgName: '',
+    orgCode: '',
+    fullName: '',
+    email: '',
+    phone: '',
+    password: '',
+  })
   const { register, loading, error } = useAuth()
   const navigate = useNavigate()
 
-  const handleChange = (e) =>
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    const nextValue = name === 'orgCode' ? value.toLowerCase() : value
+    setForm((prev) => ({ ...prev, [name]: nextValue }))
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     const ok = await register(form)
-    if (ok) navigate('/dashboard')
+    if (ok) {
+      const user = useAuthStore.getState().user
+      const isAdmin = user?.roles?.includes('ADMIN')
+      navigate(isAdmin ? '/admin/users' : '/dashboard')
+    }
   }
 
   return (
     <div className="auth-card">
       <h2 className="auth-title">Create Account</h2>
-      <p className="auth-subtitle">Sign up to get started.</p>
+      <p className="auth-subtitle">Create your organization and first admin account.</p>
 
       <form onSubmit={handleSubmit} className="auth-form">
         {error && <div className="alert alert-error">{error}</div>}
+
+        <div className="form-group">
+          <label htmlFor="orgName">Organization Name</label>
+          <input
+            id="orgName"
+            type="text"
+            name="orgName"
+            value={form.orgName}
+            onChange={handleChange}
+            placeholder="Acme Corporation"
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="orgCode">Organization Short Name</label>
+          <input
+            id="orgCode"
+            type="text"
+            name="orgCode"
+            value={form.orgCode}
+            onChange={handleChange}
+            placeholder="acme-corp"
+            autoCapitalize="none"
+            pattern="^[a-z0-9_-]+$"
+            title="Lowercase letters, numbers, hyphens or underscores only"
+            required
+          />
+        </div>
 
         <div className="form-group">
           <label htmlFor="fullName">Full Name</label>
@@ -46,7 +90,20 @@ export default function Register() {
             value={form.email}
             onChange={handleChange}
             placeholder="you@example.com"
+            autoCapitalize="none"
             required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="phone">Phone (optional)</label>
+          <input
+            id="phone"
+            type="tel"
+            name="phone"
+            value={form.phone}
+            onChange={handleChange}
+            placeholder="+1 555 0100"
           />
         </div>
 

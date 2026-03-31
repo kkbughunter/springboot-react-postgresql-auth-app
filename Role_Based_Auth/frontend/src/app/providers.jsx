@@ -19,7 +19,7 @@ export default function Providers() {
     getProfileApi()
       .then((res) => setUser(res.data.data))
       .catch(() => logout())
-  }, [])
+  }, [logout, setUser])
 
   return <RouterProvider router={router} />
 }

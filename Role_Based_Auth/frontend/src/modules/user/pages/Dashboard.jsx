@@ -11,6 +11,7 @@ export default function Dashboard() {
   const [form, setForm]           = useState({
     fullName: user?.fullName || '',
     gender:   user?.gender   || '',
+    phone:    user?.phone    || '',
   })
 
   const handleChange = (e) =>
@@ -20,7 +21,11 @@ export default function Dashboard() {
     e.preventDefault()
     const updated = await updateProfile(form)
     if (updated) {
-      updateUser({ fullName: updated.fullName, gender: updated.gender })
+      updateUser({
+        fullName: updated.fullName,
+        gender: updated.gender,
+        phone: updated.phone,
+      })
       setEditing(false)
       setSuccess('Profile updated successfully!')
       setTimeout(() => setSuccess(''), 3000)
@@ -28,7 +33,11 @@ export default function Dashboard() {
   }
 
   const handleCancel = () => {
-    setForm({ fullName: user?.fullName || '', gender: user?.gender || '' })
+    setForm({
+      fullName: user?.fullName || '',
+      gender: user?.gender || '',
+      phone: user?.phone || '',
+    })
     setEditing(false)
   }
 
@@ -78,6 +87,17 @@ export default function Dashboard() {
               </select>
             </div>
 
+            <div className="form-group">
+              <label htmlFor="phone">Phone</label>
+              <input
+                id="phone"
+                name="phone"
+                value={form.phone}
+                onChange={handleChange}
+                placeholder="+1 555 0100"
+              />
+            </div>
+
             <div className="edit-actions">
               <button type="submit" className="btn-primary" disabled={loading}>
                 {loading ? 'Saving…' : 'Save Changes'}
@@ -90,6 +110,10 @@ export default function Dashboard() {
         ) : (
           <>
             <div className="user-field">
+              <span className="field-label">Org</span>
+              <span className="field-value">{user?.orgCode || '—'}</span>
+            </div>
+            <div className="user-field">
               <span className="field-label">Full Name</span>
               <span className="field-value">{user?.fullName}</span>
             </div>
@@ -100,6 +124,30 @@ export default function Dashboard() {
             <div className="user-field">
               <span className="field-label">Gender</span>
               <span className="field-value">{user?.gender || 'Not specified'}</span>
+            </div>
+            <div className="user-field">
+              <span className="field-label">Phone</span>
+              <span className="field-value">{user?.phone || '—'}</span>
+            </div>
+            <div className="user-field">
+              <span className="field-label">Roles</span>
+              <span className="field-value">
+                <span className="role-badges">
+                  {(user?.roles || []).map((role) => (
+                    <span key={role} className={`role-badge role-${role.toLowerCase()}`}>
+                      {role}
+                    </span>
+                  ))}
+                </span>
+              </span>
+            </div>
+            <div className="user-field">
+              <span className="field-label">Status</span>
+              <span className="field-value">
+                <span className={user?.isActive ? 'status status-active' : 'status status-inactive'}>
+                  {user?.isActive ? 'Active' : 'Inactive'}
+                </span>
+              </span>
             </div>
           </>
         )}

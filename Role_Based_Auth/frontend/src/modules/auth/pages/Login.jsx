@@ -1,28 +1,50 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import useAuthStore from '../store/auth.store'
 
 export default function Login() {
-  const [form, setForm] = useState({ email: '', password: '' })
+  const [form, setForm] = useState({ orgCode: '', email: '', password: '' })
   const { login, loading, error } = useAuth()
   const navigate = useNavigate()
 
-  const handleChange = (e) =>
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    const nextValue = name === 'orgCode' ? value.toLowerCase() : value
+    setForm((prev) => ({ ...prev, [name]: nextValue }))
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     const ok = await login(form)
-    if (ok) navigate('/dashboard')
+    if (ok) {
+      const user = useAuthStore.getState().user
+      const isAdmin = user?.roles?.includes('ADMIN')
+      navigate(isAdmin ? '/admin/users' : '/dashboard')
+    }
   }
 
   return (
     <div className="auth-card">
       <h2 className="auth-title">Sign In</h2>
-      <p className="auth-subtitle">Welcome back! Please enter your details.</p>
+      <p className="auth-subtitle">Enter your organization Short Name and credentials.</p>
 
       <form onSubmit={handleSubmit} className="auth-form">
         {error && <div className="alert alert-error">{error}</div>}
+
+        <div className="form-group">
+          <label htmlFor="orgCode">Organization Code</label>
+          <input
+            id="orgCode"
+            type="text"
+            name="orgCode"
+            value={form.orgCode}
+            onChange={handleChange}
+            placeholder="e.g. acme-corp"
+            autoCapitalize="none"
+            required
+          />
+        </div>
 
         <div className="form-group">
           <label htmlFor="email">Email</label>
@@ -33,6 +55,7 @@ export default function Login() {
             value={form.email}
             onChange={handleChange}
             placeholder="you@example.com"
+            autoCapitalize="none"
             required
           />
         </div>
@@ -56,8 +79,8 @@ export default function Login() {
       </form>
 
       <p className="auth-footer">
-        Don&apos;t have an account?{' '}
-        <Link to="/register">Create one</Link>
+        New organization?{' '}
+        <Link to="/register">Register here</Link>
       </p>
     </div>
   )

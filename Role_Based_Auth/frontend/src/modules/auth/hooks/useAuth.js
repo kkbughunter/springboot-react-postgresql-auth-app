@@ -13,8 +13,18 @@ export function useAuth() {
     setError(null)
     try {
       const res = await loginApi(credentials)
-      const { userId, email, fullName, gender } = res.data.data
-      setUser({ userId, email, fullName, gender })
+      const { userId, orgId, orgCode, email, fullName, gender, phone, roles, isActive } = res.data.data
+      setUser({
+        userId,
+        orgId,
+        orgCode,
+        email,
+        fullName,
+        gender,
+        phone,
+        roles,
+        isActive: isActive ?? true,
+      })
       return true
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed')
@@ -29,8 +39,18 @@ export function useAuth() {
     setError(null)
     try {
       const res = await registerApi(userData)
-      const { userId, email, fullName, gender } = res.data.data
-      setUser({ userId, email, fullName, gender })
+      const { userId, orgId, orgCode, email, fullName, gender, phone, roles, isActive } = res.data.data
+      setUser({
+        userId,
+        orgId,
+        orgCode,
+        email,
+        fullName,
+        gender,
+        phone,
+        roles,
+        isActive: isActive ?? true,
+      })
       return true
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed')
@@ -42,8 +62,8 @@ export function useAuth() {
 
   const logoutUser = async () => {
     try {
-      await logoutApi()   // backend clears httpOnly cookies
-    } catch (_) {
+      await logoutApi()
+    } catch {
       // ignore network errors — still clear local state
     } finally {
       logout()
